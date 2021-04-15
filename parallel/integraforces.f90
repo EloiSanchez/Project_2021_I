@@ -57,19 +57,20 @@ module integraforces
 
                                     Ulocal = Ulocal + 4.d0*((1.d0/dist)**12-(1.d0/dist)**6)-&
                                                 4.d0*((1.d0/rc)**12-(1.d0/rc)**6)
-                                    Plocal = Plocal + sum(distv * fij)
                               end if
                         end if
                   end do
+                  Plocal = Plocal + sum(r(:,i) * f(:,i))
             end do
             !Add 1/3V factor and collect contributions of U and P on Master.
             Plocal = 1.d0/(3.d0*L**3)*Plocal
             call MPI_REDUCE(Ulocal,U,1,MPI_DOUBLE_PRECISION,MPI_SUM,master,MPI_COMM_WORLD,ierror)
+            if(taskid==master) U = U/2.d0 !Remove double counting
             call MPI_REDUCE(Plocal,P,1,MPI_DOUBLE_PRECISION,MPI_SUM,master,MPI_COMM_WORLD,ierror)
       end subroutine compute_force_LJ
 
       subroutine andersen_therm(v,Temp)
-         !Author: Arnau Jurado
+         !Author: Alex Parraga
          !     Applies the Andersen thermostat to a system of N particles. Requires
          !     boxmuller subroutine.
          !           Input
@@ -164,7 +165,6 @@ module integraforces
          real(8) :: r(D,N), rlocal(D,N), v(D,N), U, f(D,N), fold(D,N), t, dt, P
          integer :: ierror
 
-
          !Initialize variables
          rlocal = r
 
@@ -205,7 +205,7 @@ module integraforces
          !        dt  --> time step
          !        r --> positions of the particles
          !        v  --> velocities of the system
-         !        T --> temperature of the system
+         !        Temp --> temperature of the system
          !        eunit --> unit of file to write energies and temperature
          !        eunit_dim --> "" with physical units
          !        eunit_g --> unit of file to write g(r)
@@ -238,13 +238,12 @@ module integraforces
          t = 0.d0
          call compute_force_LJ(r,f,U,Ppot) !Initial force, energy and pressure
          call energy_kin(v,ekin,Tins) !Compute initial kinetic energy
-         if (taskid==master) Ptot = rho*Tins + Ppot !AJ: modifed to use the rho in parameters.
 
          !Write intial results.
          if (taskid==master) then
+             Ptot = rho*Tins + Ppot !AJ: modifed to use the rho in parameters.
              write(eunit,*)"#time,   K,   U,  E,  T,  Ptot"
              write(eunit,*) t, ekin, U, ekin+U, Tins, Ptot
-
              write(eunit_dim,*)"#time,   K,   U,  E,  T,  Ptot"
              write(eunit_dim,*) t*unit_of_time,&
                         ekin*unit_of_energy, U*unit_of_energy, (ekin+U)*unit_of_energy,&
@@ -256,12 +255,11 @@ module integraforces
             call verlet_v_step(r,v,fold,t,i,dt,U,Ppot) !Perform Verlet step.
             call andersen_therm(v,Temp) !Apply thermostat
             call energy_kin(v,ekin,Tins)
-            if (taskid==master) Ptot = rho*Tins + Ppot
 
-            !Write to file.
+            !Write in file.
             if (taskid==master) then
+               Ptot = rho*Tins + Ppot
                write(eunit,*) t, ekin, U, ekin+U, Tins, Ptot
-
                write(eunit_dim,*) t*unit_of_time,&
                         ekin*unit_of_energy, U*unit_of_energy, (ekin+U)*unit_of_energy,&
                         Tins*epsilon, Ptot*unit_of_pressure

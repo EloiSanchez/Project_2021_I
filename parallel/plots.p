@@ -6,7 +6,7 @@ data_directory_dim = "./results/dimensionalized/"
 plots_directory = "./results/plots/"
 plots_directory_dim = plots_directory."dimensionalized/"
 set fit quiet
-set fit logfile '/dev/null'
+set fit logfile "./results/diffcoeff.fit"
 set terminal png size 800,600
 
 
@@ -112,7 +112,7 @@ plot data_directory."correlation_energy.dat" w l
 
 set output plots_directory_dim."Energies.png"
 set title "Energies respecte temps"
-set xlabel "Temps [s]"
+set xlabel "Temps [ps]"
 set ylabel "Energia [J/mol]"
 set offsets 0, 0, 50, 0
 set key bmargin center horizontal spacing 3
@@ -121,8 +121,8 @@ plot data_directory_dim."thermodynamics_dim.dat" u 1:2 w l t "Energia cinètica"
 
 set output plots_directory_dim."Pressio.png"
 set title "Pressió respecte temps"
-set xlabel "Temps [s]"
-set ylabel "Pressió [pa]"
+set xlabel "Temps [ps]"
+set ylabel "Pressió [Pa]"
 set offsets 0, 0, 0, 0
 unset key
 plot data_directory_dim."thermodynamics_dim.dat" u 1:6 w l 
@@ -130,7 +130,7 @@ plot data_directory_dim."thermodynamics_dim.dat" u 1:6 w l
 
 set output plots_directory_dim."Temperatura.png"
 set title "Temperatura respecte temps"
-set xlabel "Temps [s]"
+set xlabel "Temps [ps]"
 set ylabel "Temperatura [K]"
 set offsets 0, 0, 0, 0
 unset key
@@ -162,14 +162,13 @@ set ylabel "Frequència"
 set yrange[0:]
 unset key
 unset offsets
-plot data_directory_dim."radial_distribution_dim.dat" u 1:2:3 w yerrorbars lc rgb "light-blue", \
-'' u 1:2 w l lc rgb "blue";
+plot data_directory_dim."radial_distribution_dim.dat" u 1:2 w l lc rgb "blue"
 
 
 set output plots_directory_dim."Coef_dif_x.png"
 set title "Coeficient de difusió X"
-set xlabel "Temps [s]"
-set ylabel "Variància X [{\305}]"
+set xlabel "Temps [ps]"
+set ylabel "Variància X [{\305}^2]"
 set yrange[*:*]
 unset key
 lin(x)=a*x+b
@@ -179,8 +178,8 @@ plot data_directory_dim."diffcoeff_dim.dat" u 1:2 w l, lin(x) w l lc rgb "blue"
 
 set output plots_directory_dim."Coef_dif_y.png"
 set title "Coeficient de difusió Y"
-set xlabel "Temps [s]"
-set ylabel "Variància Y [{\305}]"
+set xlabel "Temps [ps]"
+set ylabel "Variància Y [{\305}^2]"
 set yrange[*:*]
 unset key
 lin(x)=a*x+b
@@ -190,18 +189,10 @@ plot data_directory_dim."diffcoeff_dim.dat" u 1:3 w l, lin(x) w l lc rgb "blue"
 
 set output plots_directory_dim."Coef_dif_z.png"
 set title "Coeficient de difusió Z"
-set xlabel "Temps [s]"
-set ylabel "Variància Z [{\305}]"
+set xlabel "Temps [ps]"
+set ylabel "Variància Z [{\305}^2]"
 set yrange[*:*]
 unset key
 lin(x)=a*x+b
 fit lin(x) data_directory_dim."diffcoeff_dim.dat" u 1:4 via a,b
 plot data_directory_dim."diffcoeff_dim.dat" u 1:4 w l, lin(x) w l lc rgb "blue"
-
-
-set output plots_directory_dim."Correlation_energy.png"
-set title "Funció Autocorrelació Energia Total"
-set xlabel "Time Lag"
-set ylabel "Autocorrelació"
-unset key
-plot data_directory_dim."correlation_energy_dim.dat" w l
